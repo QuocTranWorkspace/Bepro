@@ -71,7 +71,7 @@ public class SecurityConf extends WebSecurityConfigurerAdapter {
 	public static void main(String[] args) {
 		System.out.println(new BCryptPasswordEncoder(4).encode("admin"));
 
-		System.out.println(new BCryptPasswordEncoder(4).encode("guest"));
+		System.out.println(new BCryptPasswordEncoder(4).encode("user"));
 
 	}
 
