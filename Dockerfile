@@ -11,5 +11,6 @@ COPY --from=build /app/target/myspringapp.war app.war
 RUN mkdir -p uploads
 ENV UPLOAD_PATH=/app/uploads
 
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.war", "--debug"]
+ENV PORT=8080
+EXPOSE ${PORT}
+ENTRYPOINT ["java", "-jar", "app.war", "--server.port=${PORT}"]
