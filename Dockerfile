@@ -26,9 +26,6 @@ RUN mkdir -p uploads && chmod 777 uploads
 ENV PORT=8080
 ENV UPLOAD_PATH=/app/uploads
 
-# Create volume for persistent uploads
-VOLUME ["/app/uploads"]
-
 # Expose the port
 EXPOSE ${PORT}
 
