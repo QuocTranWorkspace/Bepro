@@ -6,6 +6,8 @@
   },
   "deploy": {
     "startCommand": "find . -name '*.war' && java -jar $(find target -name '*.war' | head -1)",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE"
   }
 }
