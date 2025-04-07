@@ -12,4 +12,4 @@ RUN mkdir -p uploads
 ENV UPLOAD_PATH=/app/uploads
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.war"]
+ENTRYPOINT ["java", "-jar", "app.war", "--debug"]

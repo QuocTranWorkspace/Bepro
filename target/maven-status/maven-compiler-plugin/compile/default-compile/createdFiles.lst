@@ -5,6 +5,7 @@ uni\yourUniversity\finalProject\services\ProductService.class
 uni\yourUniversity\finalProject\services\ProductImagesService.class
 uni\yourUniversity\finalProject\controller\customer\RegisterController.class
 uni\yourUniversity\finalProject\controller\BaseController.class
+uni\yourUniversity\finalProject\controller\HealthController.class
 uni\yourUniversity\finalProject\services\UsersRolesService.class
 uni\yourUniversity\finalProject\dto\Cart.class
 uni\yourUniversity\finalProject\dto\CartItem.class
