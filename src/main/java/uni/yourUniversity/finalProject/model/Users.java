@@ -26,7 +26,6 @@ public class Users extends BaseEntity implements UserDetails {
 	private String username;
 
 	@Column(name = "password", length = 100, nullable = false)
-	@Size(min = 6, message = "Mật khẩu ít nhất 6 ký tự")
 	private String password;
 
 	/**
