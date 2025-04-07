@@ -18,8 +18,5 @@ ENV PORT=8080
 # Expose the port
 EXPOSE 8080
 
-# Healthcheck to help Railway determine if your app is running
-HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:8080/health || exit 1
-
 # Launch with explicitly empty context path
-CMD ["java", "-jar", "-Dserver.servlet.context-path=", "-Dserver.port=${PORT}", "app.war"]
+CMD ["java", "-jar", "-Dserver.servlet.context-path=", "-Dserver.port=8080", "app.war"]
