@@ -22,7 +22,7 @@ public class SecurityConf extends WebSecurityConfigurerAdapter {
 				// trình duyệt đều được bắt trong hàm này
 
 				// cho phép các request static resources không bị ràng buộc(permitAll)
-				.antMatchers("/css/**", "/js/**", "/upload/**", "/img/**", "/login", "/logout").permitAll()
+				.antMatchers("/css/**", "/js/**", "/upload/**", "/img/**", "/login", "/logout", "/healthCheck").permitAll()
 
 				// các request kiểu: "/admin/" là phải đăng nhập (authenticated)
 				.antMatchers("/administrator/**").hasAnyAuthority("ADMIN") // authenticated()
