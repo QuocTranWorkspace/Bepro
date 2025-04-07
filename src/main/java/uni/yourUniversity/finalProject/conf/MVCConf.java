@@ -19,43 +19,22 @@ public class MVCConf implements WebMvcConfigurer {
 
 	@Override
 	public void addResourceHandlers(final ResourceHandlerRegistry registry) {
-
-		// ERROR: http://localhost:8080/css/styles.css 404
-		// bất cứ request nào có dạng: http://localhost:8080/css/thumuccon/dcf.css sẽ
-		// vào folder src/main/resources/css
-		// classpath: = /src/main/resources
 		registry.addResourceHandler("/css/**").addResourceLocations("classpath:/css/");
-
-		// ERROR: http://localhost:8080/js/scripts.js 404
-		// bất cứ request nào có dạng: http://localhost:8080/js/thumuccon/dcf.js sẽ vào
-		// folder src/main/resources/js
 		registry.addResourceHandler("/js/**").addResourceLocations("classpath:/js/");
 		registry.addResourceHandler("/img/**").addResourceLocations("classpath:/img/");
 
-		// đăng kí thêm folder upload
-		registry.addResourceHandler("/upload/**").addResourceLocations("file:" + "D:/CAGL/Future/JavaWeb22/Upload/");
+		// Use environment variable for upload path
+		String uploadPath = System.getenv("UPLOAD_PATH") != null ?
+				System.getenv("UPLOAD_PATH") : "uploads";
+		registry.addResourceHandler("/upload/**").addResourceLocations("file:" + uploadPath + "/");
 	}
 
-	/**
-	 * View resolver view resolver.
-	 *
-	 * @return the view resolver
-	 */
 	@Bean
 	public ViewResolver viewResolver() {
-
-		// Class InternalResourceViewResolver implements ViewResolver
 		InternalResourceViewResolver bean = new InternalResourceViewResolver();
-
-		// Thiết lập view engine
 		bean.setViewClass(JstlView.class);
-
-		// Đường dẫn thư mục gốc chứa view
 		bean.setPrefix("/WEB-INF/views/");
-
-		// Tên đuôi của view
 		bean.setSuffix(".jsp");
-
 		return bean;
 	}
 

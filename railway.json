@@ -2,10 +2,10 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "./mvnw clean package -DskipTests"
+    "buildCommand": "./mvnw clean package -DskipTests && find . -name '*.war' && echo 'Build complete'"
   },
   "deploy": {
-    "startCommand": "java -jar target/*.war",
+    "startCommand": "find . -name '*.war' && java -jar $(find target -name '*.war' | head -1)",
     "healthcheckPath": "/",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE"

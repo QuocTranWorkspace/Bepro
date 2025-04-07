@@ -1,11 +1,11 @@
 package uni.yourUniversity.finalProject.model;
 
-import org.hibernate.validator.constraints.Length;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
+import javax.validation.constraints.Size;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -26,7 +26,7 @@ public class Users extends BaseEntity implements UserDetails {
 	private String username;
 
 	@Column(name = "password", length = 100, nullable = false)
-	@Length(min = 6, message = "Mật khẩu ít nhất 6 ký tự")
+	@Size(min = 6, message = "Mật khẩu ít nhất 6 ký tự")
 	private String password;
 
 	/**
