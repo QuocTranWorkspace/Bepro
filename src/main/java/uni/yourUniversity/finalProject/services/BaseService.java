@@ -107,44 +107,41 @@ public abstract class BaseService<E extends BaseEntity> {
 		PagerData<E> result = new PagerData<>();
 
 		try {
+			// Create a count query to get total items
+			String countSql = "SELECT COUNT(*) FROM (" + sql + ") AS countTable";
+			Query countQuery = entityManager.createNativeQuery(countSql);
+			Number totalItems = (Number) countQuery.getSingleResult();
+
+			// Set pager properties
+			result.setCurrentPage(page);
+			result.setTotalItems(totalItems.intValue());
+			result.setSizeOfPage(SIZE_OF_PAGE);
+
+			// Create main query
 			Query query = entityManager.createNativeQuery(sql, clazz());
 
-			// Modified version with more error handling
-			if (page > 0) {
-				try {
-					result.setCurrentPage(page);
-
-					// Count total items separately to avoid issues
-					String countSql = "SELECT COUNT(*) FROM (" + sql + ") AS total";
-					Query countQuery = entityManager.createNativeQuery(countSql);
-					Number count = (Number) countQuery.getSingleResult();
-					result.setTotalItems(count.intValue());
-
-					result.setSizeOfPage(SIZE_OF_PAGE);
-
-					// Add this check to prevent invalid pagination
-					if (page > 1 && count.intValue() <= (page - 1) * SIZE_OF_PAGE) {
-						page = 1; // Reset to first page if requested page exceeds total
-					}
-
-					query.setFirstResult((page - 1) * SIZE_OF_PAGE);
+			// Apply pagination only if needed
+			if (page > 0 && SIZE_OF_PAGE > 0) {
+				int firstResult = (page - 1) * SIZE_OF_PAGE;
+				// Ensure firstResult doesn't exceed total items
+				if (firstResult < totalItems.intValue()) {
+					query.setFirstResult(firstResult);
 					query.setMaxResults(SIZE_OF_PAGE);
-				} catch (Exception e) {
-					// Log the specific pagination error
-					System.err.println("Pagination error: " + e.getMessage());
-					// Fall back to first page
+				} else {
+					// If requested page exceeds available data, go to first page
 					query.setFirstResult(0);
 					query.setMaxResults(SIZE_OF_PAGE);
+					result.setCurrentPage(1);
 				}
 			}
 
 			result.setData(query.getResultList());
 		} catch (Exception e) {
-			// Print more detailed error information
-			System.err.println("Error executing query: " + sql);
-			System.err.println("Error message: " + e.getMessage());
+			System.err.println("Error in pagination: " + e.getMessage());
 			e.printStackTrace();
-
+			// Return empty result on error
+			result.setData(new ArrayList<>());
+//			result.setErrorMessage("Lỗi truy vấn dữ liệu: " + e.getMessage());
 		}
 
 		return result;

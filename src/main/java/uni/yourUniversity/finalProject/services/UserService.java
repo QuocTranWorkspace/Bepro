@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import uni.yourUniversity.finalProject.dto.UserSearch;
 import uni.yourUniversity.finalProject.model.Users;
 
+import java.util.List;
+
 /**
  * The type User service.
  */
@@ -47,6 +49,12 @@ public class UserService extends BaseService<Users> {
 		}
 
 		return super.getEntitiesByNativeSQL(sql, userSearch.getCurrentPage());
+	}
+
+	public Users findByUsername(String username) {
+		String sql = "SELECT * FROM users WHERE name = '" + username + "'";
+		List<Users> users = getEntitiesByNativeSQL(sql);
+		return users.isEmpty() ? null : users.get(0);
 	}
 
 }

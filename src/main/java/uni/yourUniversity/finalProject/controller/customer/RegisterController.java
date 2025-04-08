@@ -68,29 +68,45 @@ public class RegisterController extends BaseController {
 	 * @throws IOException the io exception
 	 */
 	@RequestMapping(value = { "/register" }, method = RequestMethod.POST)
-	public String contact2(final Model model, final HttpServletRequest request, final HttpServletResponse response,
-			final @ModelAttribute("userModel") Users user) throws IOException {
+	public String contact2(final Model model, final HttpServletRequest request,
+						   final HttpServletResponse response,
+						   final @ModelAttribute("userModel") Users user)
+			throws IOException {
+		try {
+			response.setContentType("text/html;charset=UTF-8");
+			request.setCharacterEncoding("utf-8");
 
-		response.setContentType("text/html;charset=UTF-8");
-		request.setCharacterEncoding("utf-8");
-		
-		List<Users> userList = userService.findAll();
-		for (int i = 0; i< userList.size();i++) {
-			if (user.getName().equals(userList.get(i).getName())) {
+			// Use optimized username check
+			Users existingUser = userService.findByUsername(user.getName());
+			if (existingUser != null) {
 				model.addAttribute("invalidUN", "Tên tài khỏa đã tồn tại");
 				model.addAttribute("userModel", new Users());
 				return "customer/register";
 			}
-		}
 
-		Integer defaultRole = 17;
-		user.setPassword(new BCryptPasswordEncoder(4).encode(user.getPassword()));
-		userService.saveOrUpdate(user);
-		// set users_roles
-		UsersRoles ur = new UsersRoles();
-		ur.setRole_id(defaultRole);
-		ur.setUser_id(user.getId());
-		urService.saveOrUpdate(ur);
-		return "redirect:/login";
+			// Apply password encoding
+			user.setPassword(new BCryptPasswordEncoder(4).encode(user.getPassword()));
+
+			// Save user in database
+			Users savedUser = userService.saveOrUpdate(user);
+			if (savedUser == null || savedUser.getId() == null) {
+				throw new RuntimeException("Không thể lưu người dùng mới");
+			}
+
+			// Assign default role
+			Integer defaultRole = 1;
+			UsersRoles ur = new UsersRoles();
+			ur.setRole_id(defaultRole);
+			ur.setUser_id(savedUser.getId());
+			urService.saveOrUpdate(ur);
+
+			return "redirect:/login";
+		} catch (Exception e) {
+			System.err.println("Registration error: " + e.getMessage());
+			e.printStackTrace();
+			model.addAttribute("errorMessage", "Đã xảy ra lỗi trong quá trình đăng ký: " + e.getMessage());
+			model.addAttribute("userModel", user);
+			return "customer/register";
+		}
 	}
 }
