@@ -1,5 +1,7 @@
 package uni.yourUniversity.finalProject.controller.customer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -25,6 +27,7 @@ import java.util.List;
  */
 @Controller
 public class RegisterController extends BaseController {
+	private static final Logger logger = LoggerFactory.getLogger(RegisterController.class);
 	/**
 	 * Register string.
 	 *
@@ -70,40 +73,47 @@ public class RegisterController extends BaseController {
 	@RequestMapping(value = { "/register" }, method = RequestMethod.POST)
 	public String contact2(final Model model, final HttpServletRequest request,
 						   final HttpServletResponse response,
-						   final @ModelAttribute("userModel") Users user)
-			throws IOException {
+						   final @ModelAttribute("userModel") Users user) throws IOException {
+
+		logger.info("Processing registration for user: {}", user.getName());
+
 		try {
 			response.setContentType("text/html;charset=UTF-8");
 			request.setCharacterEncoding("utf-8");
 
-			// Use optimized username check
-			Users existingUser = userService.findByUsername(user.getName());
-			if (existingUser != null) {
-				model.addAttribute("invalidUN", "Tên tài khỏa đã tồn tại");
-				model.addAttribute("userModel", new Users());
-				return "customer/register";
+			// Check for duplicate username
+			logger.debug("Checking if username already exists: {}", user.getName());
+			List<Users> userList = userService.findAll();
+			for (int i = 0; i < userList.size(); i++) {
+				if (user.getName().equals(userList.get(i).getName())) {
+					logger.info("Username already exists: {}", user.getName());
+					model.addAttribute("invalidUN", "Tên tài khỏa đã tồn tại");
+					model.addAttribute("userModel", new Users());
+					return "customer/register";
+				}
 			}
 
-			// Apply password encoding
+			// Password encoding
+			logger.debug("Encoding password for user: {}", user.getName());
 			user.setPassword(new BCryptPasswordEncoder(4).encode(user.getPassword()));
 
-			// Save user in database
-			Users savedUser = userService.saveOrUpdate(user);
-			if (savedUser == null || savedUser.getId() == null) {
-				throw new RuntimeException("Không thể lưu người dùng mới");
-			}
+			// Save user
+			logger.debug("Saving new user to database: {}", user.getName());
+			userService.saveOrUpdate(user);
 
-			// Assign default role
+			// Set user role
+			logger.debug("Assigning default role (17) to user: {}", user.getName());
 			Integer defaultRole = 1;
 			UsersRoles ur = new UsersRoles();
 			ur.setRole_id(defaultRole);
-			ur.setUser_id(savedUser.getId());
+			ur.setUser_id(user.getId());
 			urService.saveOrUpdate(ur);
 
+			logger.info("User registration successful: {}", user.getName());
 			return "redirect:/login";
+
 		} catch (Exception e) {
-			System.err.println("Registration error: " + e.getMessage());
-			e.printStackTrace();
+			logger.error("Error during user registration: {}", e.getMessage(), e);
 			model.addAttribute("errorMessage", "Đã xảy ra lỗi trong quá trình đăng ký: " + e.getMessage());
 			model.addAttribute("userModel", user);
 			return "customer/register";

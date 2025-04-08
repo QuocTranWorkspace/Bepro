@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * The type Base service.
  *
@@ -26,6 +29,8 @@ public abstract class BaseService<E extends BaseEntity> {
 	 * The constant NO_PAGING.
 	 */
 	public static int NO_PAGING = 1;
+
+	private static final Logger logger = LoggerFactory.getLogger(BaseService.class);
 
 	/**
 	 * The Entity manager.
@@ -98,7 +103,6 @@ public abstract class BaseService<E extends BaseEntity> {
 	 * @param page the page
 	 * @return entities by native sql
 	 */
-	@SuppressWarnings("unchecked")
 	public PagerData<E> getEntitiesByNativeSQL(String sql, int page) {
 		if (page <= 0) {
 			throw new RuntimeException("page phải lớn hơn 0");
@@ -107,22 +111,68 @@ public abstract class BaseService<E extends BaseEntity> {
 		PagerData<E> result = new PagerData<>();
 
 		try {
-			Query query = entityManager.createNativeQuery(sql, clazz());
+			// Get the total count - but be careful with the SQL construction
+			// This approach may not work with all databases or complex queries
+			// For a more robust solution, you might need to modify the original SQL
 
-			// trường hợp có thực hiện phân trang thì kết quả trả về
-			// bao gồm tổng số page và dữ liệu page hiện tại
-			if (page > 0) {
-				result.setCurrentPage(page);
-				result.setTotalItems(query.getResultList().size());
-				result.setSizeOfPage(SIZE_OF_PAGE);
+			String countSql;
+			if (sql.toLowerCase().contains("group by")) {
+				// For queries with GROUP BY, wrap the entire query
+				countSql = "SELECT COUNT(*) FROM (" + sql + ") AS count_table";
+			} else {
+				// For simpler queries, try to extract just the FROM part
+				int fromIndex = sql.toLowerCase().indexOf("from");
+				if (fromIndex > 0) {
+					countSql = "SELECT COUNT(*) " + sql.substring(fromIndex);
 
-				query.setFirstResult((page - 1) * SIZE_OF_PAGE);
-				query.setMaxResults(SIZE_OF_PAGE);
+					// Remove any ORDER BY clause which isn't needed for counting
+					int orderByIndex = countSql.toLowerCase().indexOf("order by");
+					if (orderByIndex > 0) {
+						countSql = countSql.substring(0, orderByIndex);
+					}
+				} else {
+					// Fallback to the subquery approach
+					countSql = "SELECT COUNT(*) FROM (" + sql + ") AS count_table";
+				}
 			}
 
-			result.setData(query.getResultList());
+			try {
+				Query countQuery = entityManager.createNativeQuery(countSql);
+				Number totalCount = (Number) countQuery.getSingleResult();
+				result.setTotalItems(totalCount.intValue());
+			} catch (Exception e) {
+				logger.error("Error executing count query: {}", e.getMessage());
+				// Fallback if count query fails
+				result.setTotalItems(0);
+			}
+
+			// Set pagination metadata
+			result.setCurrentPage(page);
+			result.setSizeOfPage(SIZE_OF_PAGE);
+
+			// Execute the main query with pagination
+			Query dataQuery = entityManager.createNativeQuery(sql, clazz());
+
+			if (page > 0 && result.getTotalItems() > 0) {
+				int startPosition = (page - 1) * SIZE_OF_PAGE;
+				if (startPosition < result.getTotalItems()) {
+					dataQuery.setFirstResult(startPosition);
+					dataQuery.setMaxResults(SIZE_OF_PAGE);
+				} else {
+					// Default to first page if requested page is out of range
+					dataQuery.setFirstResult(0);
+					dataQuery.setMaxResults(SIZE_OF_PAGE);
+					result.setCurrentPage(1);
+				}
+			}
+
+			List<E> pageData = dataQuery.getResultList();
+			result.setData(pageData);
+
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("Error in pagination: {}", e.getMessage(), e);
+			// Return empty result on error
+			result.setData(new ArrayList<>());
 		}
 
 		return result;
