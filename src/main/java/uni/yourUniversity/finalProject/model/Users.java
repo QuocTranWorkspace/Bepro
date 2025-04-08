@@ -56,7 +56,7 @@ public class Users extends BaseEntity implements UserDetails {
 	@Column(name = "shipping_address", length = 1000, nullable = true)
 	private String shipping_address;
 
-	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	private Set<UsersRoles> userRoles = new HashSet<>();
 
 	// Helper method to get roles
