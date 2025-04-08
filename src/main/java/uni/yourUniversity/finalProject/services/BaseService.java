@@ -109,20 +109,42 @@ public abstract class BaseService<E extends BaseEntity> {
 		try {
 			Query query = entityManager.createNativeQuery(sql, clazz());
 
-			// trường hợp có thực hiện phân trang thì kết quả trả về
-			// bao gồm tổng số page và dữ liệu page hiện tại
+			// Modified version with more error handling
 			if (page > 0) {
-				result.setCurrentPage(page);
-				result.setTotalItems(query.getResultList().size());
-				result.setSizeOfPage(SIZE_OF_PAGE);
+				try {
+					result.setCurrentPage(page);
 
-				query.setFirstResult((page - 1) * SIZE_OF_PAGE);
-				query.setMaxResults(SIZE_OF_PAGE);
+					// Count total items separately to avoid issues
+					String countSql = "SELECT COUNT(*) FROM (" + sql + ") AS total";
+					Query countQuery = entityManager.createNativeQuery(countSql);
+					Number count = (Number) countQuery.getSingleResult();
+					result.setTotalItems(count.intValue());
+
+					result.setSizeOfPage(SIZE_OF_PAGE);
+
+					// Add this check to prevent invalid pagination
+					if (page > 1 && count.intValue() <= (page - 1) * SIZE_OF_PAGE) {
+						page = 1; // Reset to first page if requested page exceeds total
+					}
+
+					query.setFirstResult((page - 1) * SIZE_OF_PAGE);
+					query.setMaxResults(SIZE_OF_PAGE);
+				} catch (Exception e) {
+					// Log the specific pagination error
+					System.err.println("Pagination error: " + e.getMessage());
+					// Fall back to first page
+					query.setFirstResult(0);
+					query.setMaxResults(SIZE_OF_PAGE);
+				}
 			}
 
 			result.setData(query.getResultList());
 		} catch (Exception e) {
+			// Print more detailed error information
+			System.err.println("Error executing query: " + sql);
+			System.err.println("Error message: " + e.getMessage());
 			e.printStackTrace();
+
 		}
 
 		return result;
