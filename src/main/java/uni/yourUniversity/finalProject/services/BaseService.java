@@ -107,41 +107,22 @@ public abstract class BaseService<E extends BaseEntity> {
 		PagerData<E> result = new PagerData<>();
 
 		try {
-			// Create a count query to get total items
-			String countSql = "SELECT COUNT(*) FROM (" + sql + ") AS countTable";
-			Query countQuery = entityManager.createNativeQuery(countSql);
-			Number totalItems = (Number) countQuery.getSingleResult();
-
-			// Set pager properties
-			result.setCurrentPage(page);
-			result.setTotalItems(totalItems.intValue());
-			result.setSizeOfPage(SIZE_OF_PAGE);
-
-			// Create main query
 			Query query = entityManager.createNativeQuery(sql, clazz());
 
-			// Apply pagination only if needed
-			if (page > 0 && SIZE_OF_PAGE > 0) {
-				int firstResult = (page - 1) * SIZE_OF_PAGE;
-				// Ensure firstResult doesn't exceed total items
-				if (firstResult < totalItems.intValue()) {
-					query.setFirstResult(firstResult);
-					query.setMaxResults(SIZE_OF_PAGE);
-				} else {
-					// If requested page exceeds available data, go to first page
-					query.setFirstResult(0);
-					query.setMaxResults(SIZE_OF_PAGE);
-					result.setCurrentPage(1);
-				}
+			// trường hợp có thực hiện phân trang thì kết quả trả về
+			// bao gồm tổng số page và dữ liệu page hiện tại
+			if (page > 0) {
+				result.setCurrentPage(page);
+				result.setTotalItems(query.getResultList().size());
+				result.setSizeOfPage(SIZE_OF_PAGE);
+
+				query.setFirstResult((page - 1) * SIZE_OF_PAGE);
+				query.setMaxResults(SIZE_OF_PAGE);
 			}
 
 			result.setData(query.getResultList());
 		} catch (Exception e) {
-			System.err.println("Error in pagination: " + e.getMessage());
 			e.printStackTrace();
-			// Return empty result on error
-			result.setData(new ArrayList<>());
-//			result.setErrorMessage("Lỗi truy vấn dữ liệu: " + e.getMessage());
 		}
 
 		return result;
