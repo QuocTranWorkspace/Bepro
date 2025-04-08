@@ -19,14 +19,14 @@ EXPOSE 8080
 
 # Create a start script using traditional methods
 RUN echo '#!/bin/sh' > /app/start.sh && \
-    echo 'echo "Starting application with Java options: -jar app.war"' >> /app/start.sh && \
+    echo 'echo "Starting application with Java options: -Xms128m -Xmx512m -jar app.war"' >> /app/start.sh && \
     echo 'echo "Current directory: $(pwd)"' >> /app/start.sh && \
     echo 'echo "Files in current directory:"' >> /app/start.sh && \
     echo 'ls -la' >> /app/start.sh && \
     echo 'echo "Environment variables:"' >> /app/start.sh && \
     echo 'env | sort' >> /app/start.sh && \
     echo 'echo "Starting Java application..."' >> /app/start.sh && \
-    echo 'java -jar app.war' >> /app/start.sh && \
+    echo 'java -Xms128m -Xmx512m -jar app.war' >> /app/start.sh && \
     chmod +x /app/start.sh
 
 # Use the script as the entry point
