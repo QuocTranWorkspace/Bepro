@@ -6,6 +6,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -55,37 +56,26 @@ public class Users extends BaseEntity implements UserDetails {
 	@Column(name = "shipping_address", length = 1000, nullable = true)
 	private String shipping_address;
 
-	@ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-	@JoinTable(name = "tbl_users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-	private Set<Role> roles = new HashSet<>();
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	private Set<UsersRoles> userRoles = new HashSet<>();
 
-	/**
-	 * Add role.
-	 *
-	 * @param role the role
-	 */
-	public void addRole(Role role) {
-		roles.add(role);
-		role.getStaff().add(this);
-	}
-
-	/**
-	 * Delete role.
-	 *
-	 * @param role the role
-	 */
-	public void deleteRole(Role role) {
-		roles.remove(role);
-		role.getStaff().remove(this);
-	}
-
-	/**
-	 * Gets roles.
-	 *
-	 * @return the roles
-	 */
+	// Helper method to get roles
 	public Set<Role> getRoles() {
+		Set<Role> roles = new HashSet<>();
+		for (UsersRoles ur : userRoles) {
+			roles.add(ur.getRole());
+		}
 		return roles;
+	}
+
+	// Helper method to add a role
+	public void addRole(Role role) {
+		UsersRoles ur = new UsersRoles();
+		ur.setUser(this);
+		ur.setRole(role);
+		ur.setCreatedDate(new Date());
+		ur.setStatus(true);
+		userRoles.add(ur);
 	}
 
 	/**
@@ -93,8 +83,8 @@ public class Users extends BaseEntity implements UserDetails {
 	 *
 	 * @param roles the roles
 	 */
-	public void setRoles(Set<Role> roles) {
-		this.roles = roles;
+	public void setRoles(Set<UsersRoles> roles) {
+		this.userRoles = roles;
 	}
 
 	/**
@@ -185,7 +175,11 @@ public class Users extends BaseEntity implements UserDetails {
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
-		return this.roles;
+		Set<Role> roles = new HashSet<>();
+		for (UsersRoles ur : userRoles) {
+			roles.add(ur.getRole());
+		}
+		return roles;
 	}
 
 	@Override

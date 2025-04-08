@@ -17,9 +17,12 @@ import uni.yourUniversity.finalProject.services.RoleService;
 import uni.yourUniversity.finalProject.services.UserService;
 import uni.yourUniversity.finalProject.services.UsersRolesService;
 
+import javax.persistence.TypedQuery;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.transaction.Transactional;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -59,7 +62,6 @@ public class RegisterController extends BaseController {
 
 	@Autowired
 	private UsersRolesService urService;
-
 	/**
 	 * Contact 2 string.
 	 *
@@ -70,51 +72,50 @@ public class RegisterController extends BaseController {
 	 * @return the string
 	 * @throws IOException the io exception
 	 */
+	@Transactional
 	@RequestMapping(value = { "/register" }, method = RequestMethod.POST)
 	public String contact2(final Model model, final HttpServletRequest request,
 						   final HttpServletResponse response,
 						   final @ModelAttribute("userModel") Users user) throws IOException {
-
-		logger.info("Processing registration for user: {}", user.getName());
-
 		try {
 			response.setContentType("text/html;charset=UTF-8");
 			request.setCharacterEncoding("utf-8");
 
-			// Check for duplicate username
-			logger.debug("Checking if username already exists: {}", user.getName());
-			List<Users> userList = userService.findAll();
-			for (int i = 0; i < userList.size(); i++) {
-				if (user.getName().equals(userList.get(i).getName())) {
-					logger.info("Username already exists: {}", user.getName());
-					model.addAttribute("invalidUN", "Tên tài khỏa đã tồn tại");
-					model.addAttribute("userModel", new Users());
-					return "customer/register";
-				}
+			// Use the service method instead of direct entityManager access
+			if (userService.usernameExists(user.getUsername())) {
+				model.addAttribute("invalidUN", "Tên tài khỏa đã tồn tại");
+				model.addAttribute("userModel", new Users());
+				return "customer/register";
 			}
 
-			// Password encoding
-			logger.debug("Encoding password for user: {}", user.getName());
+			// Set basic user properties
 			user.setPassword(new BCryptPasswordEncoder(4).encode(user.getPassword()));
+			user.setCreatedDate(new Date());
+			user.setStatus(true);
 
-			// Save user
-			logger.debug("Saving new user to database: {}", user.getName());
+			// Save the user first to get an ID
 			userService.saveOrUpdate(user);
 
-			// Set user role
-			logger.debug("Assigning default role (17) to user: {}", user.getName());
-			Integer defaultRole = 1;
-			UsersRoles ur = new UsersRoles();
-			ur.setRole_id(defaultRole);
-			ur.setUser_id(user.getId());
-			urService.saveOrUpdate(ur);
+			// Now add the role using the entity relationship
+			Role defaultRole = roleService.getById(1);
+			if (defaultRole != null) {
+				// Create the UsersRoles entity directly
+				UsersRoles ur = new UsersRoles();
+				ur.setUser(user);
+				ur.setRole(defaultRole);
+				ur.setCreatedDate(new Date());
+				ur.setStatus(true);
+				urService.saveOrUpdate(ur);
+			} else {
+				logger.error("Default role with ID 17 not found");
+			}
 
-			logger.info("User registration successful: {}", user.getName());
+			logger.info("User registered successfully: {}", user.getUsername());
 			return "redirect:/login";
 
 		} catch (Exception e) {
-			logger.error("Error during user registration: {}", e.getMessage(), e);
-			model.addAttribute("errorMessage", "Đã xảy ra lỗi trong quá trình đăng ký: " + e.getMessage());
+			logger.error("Registration error: {}", e.getMessage(), e);
+			model.addAttribute("errorMessage", "Đã xảy ra lỗi trong quá trình đăng ký");
 			model.addAttribute("userModel", user);
 			return "customer/register";
 		}

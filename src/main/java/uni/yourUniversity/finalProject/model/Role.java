@@ -13,9 +13,6 @@ import java.util.Set;
 @Table(name = "tbl_roles")
 public class Role extends BaseEntity implements GrantedAuthority {
 
-	/**
-	 *
-	 */
 	private static final long serialVersionUID = 1L;
 
 	@Column(name = "name", length = 45, nullable = false)
@@ -24,82 +21,40 @@ public class Role extends BaseEntity implements GrantedAuthority {
 	@Column(name = "description", length = 45, nullable = false)
 	private String description;
 
-	/**
-	 * The Users.
-	 */
-	@ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, mappedBy = "roles")
-	Set<Users> users = new HashSet<>();
+	// This is the correct relationship for using UsersRoles entity
+	@OneToMany(mappedBy = "role")
+	private Set<UsersRoles> userRoles = new HashSet<>();
 
-	/**
-	 * Add staff.
-	 *
-	 * @param user the user
-	 */
-	public void addStaff(Users user) {
-		users.add(user);
-		user.getRoles().add(this);
+	// Getter and setter for userRoles
+	public Set<UsersRoles> getUserRoles() {
+		return userRoles;
 	}
 
-	/**
-	 * Delete staff.
-	 *
-	 * @param user the user
-	 */
-	public void deleteStaff(Users user) {
-		users.remove(user);
-		user.getRoles().remove(this);
+	public void setUserRoles(Set<UsersRoles> userRoles) {
+		this.userRoles = userRoles;
 	}
 
-	/**
-	 * Gets staff.
-	 *
-	 * @return the staff
-	 */
-	public Set<Users> getStaff() {
+	// Helper method to get associated users
+	public Set<Users> getUsers() {
+		Set<Users> users = new HashSet<>();
+		for (UsersRoles ur : userRoles) {
+			users.add(ur.getUser());
+		}
 		return users;
 	}
 
-	/**
-	 * Sets staff.
-	 *
-	 * @param users the users
-	 */
-	public void setStaff(Set<Users> users) {
-		this.users = users;
-	}
-
-	/**
-	 * Gets name.
-	 *
-	 * @return the name
-	 */
 	public String getName() {
 		return name;
 	}
 
-	/**
-	 * Sets name.
-	 *
-	 * @param name the name
-	 */
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	/**
-	 * Gets description.
-	 *
-	 * @return the description
-	 */
 	public String getDescription() {
 		return description;
 	}
 
-	/**
-	 * Sets description.
-	 *
-	 * @param description the description
-	 */
 	public void setDescription(String description) {
 		this.description = description;
 	}
@@ -108,5 +63,4 @@ public class Role extends BaseEntity implements GrantedAuthority {
 	public String getAuthority() {
 		return this.name;
 	}
-
 }

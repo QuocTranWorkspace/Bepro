@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import uni.yourUniversity.finalProject.dto.UserSearch;
 import uni.yourUniversity.finalProject.model.Users;
 
+import javax.persistence.TypedQuery;
 import java.util.List;
 
 /**
@@ -55,6 +56,14 @@ public class UserService extends BaseService<Users> {
 		String sql = "SELECT * FROM users WHERE name = '" + username + "'";
 		List<Users> users = getEntitiesByNativeSQL(sql);
 		return users.isEmpty() ? null : users.get(0);
+	}
+
+	public boolean usernameExists(String username) {
+		String jpql = "SELECT COUNT(u) FROM Users u WHERE u.username = :username";
+		TypedQuery<Long> query = entityManager.createQuery(jpql, Long.class);
+		query.setParameter("username", username);
+		Long count = query.getSingleResult();
+		return count > 0;
 	}
 
 }
