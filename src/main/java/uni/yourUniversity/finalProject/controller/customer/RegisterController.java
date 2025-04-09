@@ -99,7 +99,7 @@ public class RegisterController extends BaseController {
 			userService.saveOrUpdate(user);
 
 			// Now add the role using the entity relationship
-			Role defaultRole = roleService.getById(1);
+			Role defaultRole = roleService.getById(2);
 			if (defaultRole != null) {
 				// Create the UsersRoles entity directly
 				UsersRoles ur = new UsersRoles();
