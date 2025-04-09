@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import uni.yourUniversity.finalProject.conf.FileStorageConfig;
 import uni.yourUniversity.finalProject.dto.ProductSearch;
 import uni.yourUniversity.finalProject.model.ProductEntity;
 import uni.yourUniversity.finalProject.model.ProductImages;
@@ -41,6 +42,9 @@ public class ProductService extends BaseService<ProductEntity> {
 		return splitFileName[0] + System.currentTimeMillis() + "." + splitFileName[1];
 	}
 
+	@Autowired
+	private FileStorageConfig fileStorageConfig;
+
 	/**
 	 * Save product.
 	 *
@@ -54,30 +58,31 @@ public class ProductService extends BaseService<ProductEntity> {
 	public void saveProduct(ProductEntity product, MultipartFile productAvatar,
 							MultipartFile[] productPictures) throws IllegalStateException, IOException {
 
+		// Create directories if they don't exist
+		createDirectoriesIfNeeded();
+
 		// kiểm tra xem admin có đẩy avatar lên không ???
 		if (isEmptyUploadFile(productAvatar)) { // có đẩy avatar lên.
+			String fileName = getUniqueUploadFileName(Objects.requireNonNull(productAvatar.getOriginalFilename()));
 
-			String fileName;
-            fileName = getUniqueUploadFileName(Objects.requireNonNull(productAvatar.getOriginalFilename()));
-
-            // tạo đường dẫn tới folder chứa avatar
-			String pathToAvatar = "D:/CAGL/Future/JavaWeb22/Upload/product/avatar/" + fileName;
+			// Use configured path
+			String pathToAvatar = fileStorageConfig.getProductAvatarPath() + fileName;
 
 			// lưu avatar vào đường dẫn trên
-			productAvatar.transferTo(new File(pathToAvatar));
+			File avatarFile = new File(pathToAvatar);
+			productAvatar.transferTo(avatarFile);
 
 			product.setAvatar("product/avatar/" + fileName);
 		}
 
 		// có đẩy pictures(product_images) ???
 		if (isEmptyUploadFile(productPictures)) { // có đẩy pictures lên.
-
-			// nếu admin đẩy lên thì duyệt tất cả file đẩy lên và lưu trên server
 			for (MultipartFile pic : productPictures) {
 				String fileName = getUniqueUploadFileName(Objects.requireNonNull(pic.getOriginalFilename()));
 
-				// lưu ảnh admin đẩy lên vào server
-				pic.transferTo(new File("D:/CAGL/Future/JavaWeb22/Upload/product/images/" + fileName));
+				// Use configured path
+				File pictureFile = new File(fileStorageConfig.getProductImagesPath() + fileName);
+				pic.transferTo(pictureFile);
 
 				// tạo mới 1 bản ghi product_images
 				ProductImages productImages = new ProductImages();
@@ -89,8 +94,14 @@ public class ProductService extends BaseService<ProductEntity> {
 		}
 		// lưu vào database
 		super.saveOrUpdate(product);
-
 	}
+
+	// Create method to ensure directories exist
+	private void createDirectoriesIfNeeded() {
+		new File(fileStorageConfig.getProductAvatarPath()).mkdirs();
+		new File(fileStorageConfig.getProductImagesPath()).mkdirs();
+	}
+
 
 	/**
 	 * Update product.
@@ -101,9 +112,13 @@ public class ProductService extends BaseService<ProductEntity> {
 	 * @throws IllegalStateException the illegal state exception
 	 * @throws IOException           the io exception
 	 */
+	// Update updateProduct method similarly
 	@Transactional
 	public void updateProduct(ProductEntity p, MultipartFile productAvatar, MultipartFile... productPictures)
 			throws IllegalStateException, IOException {
+
+		// Create directories if they don't exist
+		createDirectoriesIfNeeded();
 
 		// lấy thông tin cũ của product theo id đang có trong database
 		ProductEntity productInDb = super.getById(p.getId());
@@ -111,12 +126,14 @@ public class ProductService extends BaseService<ProductEntity> {
 		// có đẩy avartar ??? => xóa avatar cũ đi và thêm avatar mới
 		if (isEmptyUploadFile(productAvatar)) {
 			// xóa avatar cũ trong folder
-			boolean delete = new File("D:/Future/JavaWeb/Upload/" + productInDb.getAvatar()).delete();
+			File oldAvatarFile = new File(fileStorageConfig.getUploadDir() + "/" + productInDb.getAvatar());
+			boolean delete = oldAvatarFile.delete();
 
 			// update avatar mới
 			if (delete) {
 				String fileName = getUniqueUploadFileName(Objects.requireNonNull(productAvatar.getOriginalFilename()));
-				productAvatar.transferTo(new File("D:/Future/JavaWeb/Upload/product/avatar/" + fileName));
+				File newAvatarFile = new File(fileStorageConfig.getProductAvatarPath() + fileName);
+				productAvatar.transferTo(newAvatarFile);
 				p.setAvatar("product/avatar/" + fileName);
 			}
 		} else {

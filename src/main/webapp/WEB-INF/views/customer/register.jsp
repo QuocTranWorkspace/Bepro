@@ -149,7 +149,7 @@ footer a {
 											<div class="mb-3">
 												<label class="form-label">Id:</label>
 												<sf:input path="id" type="text" class="form-control"
-													id="idTitle" placeholder="Id" name="title"></sf:input>
+													id="idTitle" placeholder="Id" name="title" style="display:none"></sf:input>
 											</div>
 
 											<div class="mb-3">
@@ -174,7 +174,7 @@ footer a {
 											</div>
 											<div class="mb-3">
 												<label class="form-label">Xác nhận mật khẩu</label>
-												<sf:input path="password"
+												<input
 													class="form-control form-control-lg" type="password"
 													name="cPassword" placeholder="Confirm password"
 													readonly="readonly" />

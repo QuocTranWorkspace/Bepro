@@ -88,6 +88,8 @@ public class RegisterController extends BaseController {
 				return "customer/register";
 			}
 
+			logger.info("User registered successfully: {}", user.getUsername() + user.getPassword());
+
 			// Set basic user properties
 			user.setPassword(new BCryptPasswordEncoder(4).encode(user.getPassword()));
 			user.setCreatedDate(new Date());
@@ -107,10 +109,10 @@ public class RegisterController extends BaseController {
 				ur.setStatus(true);
 				urService.saveOrUpdate(ur);
 			} else {
-				logger.error("Default role with ID 17 not found");
+				logger.error("Default role with ID 2 not found");
 			}
 
-			logger.info("User registered successfully: {}", user.getUsername());
+			logger.info("User registered successfully: {}", user.getUsername() + user.getPassword());
 			return "redirect:/login";
 
 		} catch (Exception e) {

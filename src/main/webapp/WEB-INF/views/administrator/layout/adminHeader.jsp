@@ -69,7 +69,7 @@
 
 <!-- simple Pagination -->
 <link type="text/css" rel="stylesheet" media='screen'
-	href='${pageContext.servletContext.contextPath}/css/adminCSS/simplePagination.css' />
+	href='${base}/css/adminCSS/simplePagination.css' />
 
 <title>DashBoard</title>
 </head>
